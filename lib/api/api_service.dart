@@ -13,8 +13,7 @@ class ApiService {
 
     try {
       if (imageFile != null) {
-        // Validate file extension
-        final allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+        final allowedExtensions = ['jpg', 'png', 'webp'];
         String ext = imageFile.path.split('.').last.toLowerCase();
         if (!allowedExtensions.contains(ext)) {
           throw Exception("Invalid image format. Only PNG, JPG, and WEBP are allowed.");
