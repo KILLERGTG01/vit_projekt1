@@ -24,12 +24,6 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
   
-  void setSharedImage(File image) {
-    _pickedImage = image;
-    _inputText = "";
-    notifyListeners();
-  }
-
   void clearInputs() {
     _pickedImage = null;
     _inputText = "";
@@ -42,6 +36,7 @@ class AppProvider extends ChangeNotifier {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       _pickedImage = File(image.path);
+      _inputText = ""; // Clear text field when an image is selected
       notifyListeners();
     }
   }

@@ -1,8 +1,5 @@
-import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart'; 
 import '../providers/app_provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,37 +10,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late StreamSubscription _intentDataStreamSubscription;
   final TextEditingController _textController = TextEditingController();
-
-@override
-void initState() {
-  super.initState();
-
-  final provider = Provider.of<AppProvider>(context, listen: false);
-  _intentDataStreamSubscription =
-      ReceiveSharingIntent.instance.getMediaStream().listen((List<SharedMediaFile> files) {
-    if (files.isNotEmpty) {
-      provider.setSharedImage(File(files.first.path));
-      _textController.clear();
-    }
-  }, onError: (err) {
-    debugPrint("getMediaStream error: $err");
-  });
-
-  ReceiveSharingIntent.instance.getInitialMedia().then((List<SharedMediaFile> files) {
-    if (files.isNotEmpty) {
-      provider.setSharedImage(File(files.first.path));
-      _textController.clear();
-    }
-    ReceiveSharingIntent.instance.reset();
-  });
-}
-
 
   @override
   void dispose() {
-    _intentDataStreamSubscription.cancel();
     _textController.dispose();
     super.dispose();
   }
@@ -52,14 +22,16 @@ void initState() {
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, child) {
-        if (_textController.text != provider.inputText && provider.pickedImage == null) {
-            _textController.text = provider.inputText;
+        // Clear the text field if an image is picked
+        if (provider.pickedImage != null && _textController.text.isNotEmpty) {
+          _textController.clear();
         }
 
         return Scaffold(
           appBar: AppBar(
             title: const Text('VIT Project'),
             actions: [
+              // Show a clear button only if there is something to clear
               if(provider.inputText.isNotEmpty || provider.pickedImage != null)
                 IconButton(
                   icon: const Icon(Icons.clear),
@@ -76,9 +48,10 @@ void initState() {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // This widget displays the selected image preview
                   if (provider.pickedImage != null)
                     Container(
-                      height: 200,
+                      height: 250,
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
@@ -89,27 +62,39 @@ void initState() {
                         ),
                       ),
                     ),
+                  // Text input field
                   TextField(
                     controller: _textController,
                     onChanged: (text) => provider.setInputText(text),
                     decoration: const InputDecoration(
-                      labelText: 'Enter text or share content',
+                      labelText: 'Enter text here',
                       border: OutlineInputBorder(),
                     ),
                     maxLines: 5,
+                    // Disable the text field if an image is selected
                     enabled: provider.pickedImage == null,
                   ),
                   const SizedBox(height: 20),
+                  
+                  // The button to pick an image from the gallery
                   ElevatedButton.icon(
                     onPressed: provider.pickImageFromGallery,
                     icon: const Icon(Icons.photo_library),
-                    label: const Text('Pick Image from Gallery'),
+                    label: const Text('Pick an Image from Gallery'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12)
+                    ),
                   ),
                   const SizedBox(height: 10),
+
+                  // Submit button
                   FilledButton(
                     onPressed: (provider.inputText.isNotEmpty || provider.pickedImage != null)
                         ? () => provider.submitData(context)
-                        : null, 
+                        : null, // Button is disabled if there's no input
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16)
+                    ),
                     child: const Text('SUBMIT'),
                   ),
                 ],
