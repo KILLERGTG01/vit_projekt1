@@ -9,9 +9,13 @@ class ResponseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF181C23),
       appBar: AppBar(
-        title: const Text('API Response'),
-        automaticallyImplyLeading: false,
+        backgroundColor: const Color(0xFF232733),
+        title: const Text('Confidence Report', style: TextStyle(color: Colors.blueAccent)),
+        automaticallyImplyLeading: true,
+        iconTheme: const IconThemeData(color: Colors.blueAccent),
+        elevation: 4,
       ),
       body: Center(
         child: Padding(
@@ -53,14 +57,57 @@ class ResponseScreen extends StatelessWidget {
                 }
                 String verdict = response["verdict"]?.toString() ?? "No verdict";
                 String explanation = response["explanation"]?.toString() ?? "No explanation";
+                Color verdictColor;
+                if (verdict.toLowerCase().contains('true') || verdict.toLowerCase().contains('secure')) {
+                  verdictColor = Colors.blueAccent;
+                } else if (verdict.toLowerCase().contains('false') || verdict.toLowerCase().contains('threat')) {
+                  verdictColor = Colors.redAccent;
+                } else {
+                  verdictColor = Colors.orangeAccent;
+                }
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 60),
-                    const SizedBox(height: 20),
-                    Text("Verdict: $verdict", style: Theme.of(context).textTheme.headlineSmall),
-                    const SizedBox(height: 10),
-                    Text(explanation, textAlign: TextAlign.center),
+                    const Icon(Icons.security, color: Colors.blueAccent, size: 60),
+                    const SizedBox(height: 24),
+                    Card(
+                      color: const Color(0xFF232733),
+                      elevation: 8,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(color: verdictColor, width: 2),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              verdict.toUpperCase(),
+                              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                    color: verdictColor,
+                                    fontWeight: FontWeight.w900,
+                                    fontFamily: 'RobotoMono',
+                                    letterSpacing: 2.5,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 10),
+                            Divider(color: verdictColor, thickness: 1.5, height: 28),
+                            Text(
+                              explanation,
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Colors.white.withOpacity(0.92),
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 );
               }
@@ -70,16 +117,7 @@ class ResponseScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          child: const Text('Go Back Home'),
-          onPressed: () {
-            Provider.of<AppProvider>(context, listen: false).clearInputs();
-            Navigator.pop(context);
-          },
-        ),
-      ),
+      // Removed bottomNavigationBar with Go Back Home button
     );
   }
 }
