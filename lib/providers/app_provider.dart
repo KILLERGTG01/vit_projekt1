@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../api/api_service.dart';
+import '../models/misinformation_response.dart';
 
 class AppProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -10,13 +12,13 @@ class AppProvider extends ChangeNotifier {
   File? _pickedImage;
   String _inputText = "";
   bool _isLoading = false;
-  String? _apiResponse;
+  MisinformationResponse? _apiResponse;
   String? _apiError;
 
   File? get pickedImage => _pickedImage;
   String get inputText => _inputText;
   bool get isLoading => _isLoading;
-  String? get apiResponse => _apiResponse;
+  MisinformationResponse? get apiResponse => _apiResponse;
   String? get apiError => _apiError;
 
   void setInputText(String text) {
@@ -50,7 +52,8 @@ class AppProvider extends ChangeNotifier {
 
     try {
       final response = await _apiService.sendData(text: _inputText, imageFile: _pickedImage);
-      _apiResponse = response;
+      final jsonResponse = jsonDecode(response);
+      _apiResponse = MisinformationResponse.fromJson(jsonResponse);
     } catch (e) {
       _apiError = e.toString();
     } finally {
