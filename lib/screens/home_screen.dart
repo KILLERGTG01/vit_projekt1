@@ -22,8 +22,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, child) {
-        if (provider.pickedImage != null && _textController.text.isNotEmpty) {
-          _textController.clear();
+        // Remove the logic that clears text when image is picked
+        // if (provider.pickedImage != null && _textController.text.isNotEmpty) {
+        //   _textController.clear();
+        // }
+
+        // Keep the text field in sync with provider.inputText
+        if (_textController.text != provider.inputText) {
+          _textController.text = provider.inputText;
+          _textController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _textController.text.length),
+          );
         }
 
         return Scaffold(
@@ -116,7 +125,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderSide: const BorderSide(color: Colors.lightBlueAccent, width: 2),
                       ),
                     ),
-                    enabled: provider.pickedImage == null,
+                    // Allow text input even if image is picked
+                    enabled: true,
                   ),
                   const SizedBox(height: 22),
                   ElevatedButton.icon(

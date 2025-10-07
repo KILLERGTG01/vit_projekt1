@@ -36,7 +36,6 @@ class AppProvider extends ChangeNotifier {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       _pickedImage = File(image.path);
-      _inputText = ""; // Clear text field when an image is selected
       notifyListeners();
     }
   }
