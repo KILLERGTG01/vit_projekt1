@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'providers/app_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/response_screen.dart';
+import 'screens/threat_analysis_screen.dart';
 
 void main() {
   runApp(
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const HomeScreen(),
         '/response': (context) => const ResponseScreen(),
+        '/threat-analysis': (context) => const ThreatAnalysisScreen(),
       },
     );
   }

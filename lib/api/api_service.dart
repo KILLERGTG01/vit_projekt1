@@ -4,7 +4,10 @@ import 'package:logger/logger.dart';
 import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-  static const String _baseUrl = "https://prj-1.abhinavganeshan.in/check-misinformation";
+  static const String _baseUrl =
+      "https://api.abhinavganeshan.in/api/misinformation/check";
+  static const String _threatAnalysisUrl =
+      "https://api.abhinavganeshan.in/api/message-threat/analyze";
   final Logger _logger = Logger();
 
   Future<String> sendData({String? text, File? imageFile}) async {
@@ -24,7 +27,9 @@ class ApiService {
         final allowedExtensions = ['jpg', 'png', 'webp'];
         String ext = imageFile.path.split('.').last.toLowerCase();
         if (!allowedExtensions.contains(ext)) {
-          throw Exception("Invalid image format. Only PNG, JPG, and WEBP are allowed.");
+          throw Exception(
+            "Invalid image format. Only PNG, JPG, and WEBP are allowed.",
+          );
         }
         _logger.d('Uploading file: ${imageFile.path}');
         _logger.d('File exists: ${await imageFile.exists()}');
@@ -62,6 +67,38 @@ class ApiService {
       }
     } catch (e) {
       throw Exception("An error occurred: $e");
+    }
+  }
+
+  Future<String> analyzeThreat({
+    required String content,
+    String messageType = 'sms',
+  }) async {
+    if (content.isEmpty) {
+      throw Exception("No content to analyze.");
+    }
+
+    try {
+      _logger.d('Analyzing threat for content: $content');
+
+      final response = await http.post(
+        Uri.parse(_threatAnalysisUrl),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {'content': content, 'message_type': messageType},
+      );
+
+      _logger.d('Threat analysis status code: ${response.statusCode}');
+      _logger.d('Threat analysis response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        throw Exception(
+          "Failed to analyze threat. Status: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      throw Exception("An error occurred during threat analysis: $e");
     }
   }
 }

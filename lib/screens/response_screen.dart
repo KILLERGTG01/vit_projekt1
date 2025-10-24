@@ -140,6 +140,8 @@ class ResponseScreen extends StatelessWidget {
           _buildVerdictCard(context, response),
           const SizedBox(height: 24),
           _buildExplanationCard(context, response.explanation),
+          const SizedBox(height: 24),
+          _buildThreatAnalysisButton(context),
           if (response.sources.isNotEmpty) ...[
             const SizedBox(height: 24),
             _buildSourcesCard(context, response.sources),
@@ -262,6 +264,114 @@ class ResponseScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildThreatAnalysisButton(BuildContext context) {
+    return Consumer<AppProvider>(
+      builder: (context, provider, child) {
+        // Only show the button if we have text input (not for image-only analysis)
+        if (provider.inputText.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFFFF6B35).withValues(alpha: 0.1),
+                const Color(0xFFFF6B35).withValues(alpha: 0.05),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFFFF6B35).withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF6B35).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.security_rounded,
+                      color: Color(0xFFFF6B35),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Advanced Threat Analysis',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Analyze URLs and links for security threats',
+                          style: TextStyle(
+                            color: Color(0xFFFF6B35),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    provider.analyzeThreat(context, provider.inputText);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF6B35),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.security_rounded, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'View Threat Analysis',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

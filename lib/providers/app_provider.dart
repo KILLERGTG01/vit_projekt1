@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../api/api_service.dart';
 import '../models/misinformation_response.dart';
+import '../models/threat_analysis_response.dart';
 
 class AppProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -14,12 +15,21 @@ class AppProvider extends ChangeNotifier {
   bool _isLoading = false;
   MisinformationResponse? _apiResponse;
   String? _apiError;
+  
+  // Threat analysis properties
+  bool _isThreatAnalysisLoading = false;
+  ThreatAnalysisResponse? _threatAnalysisResponse;
+  String? _threatAnalysisError;
 
   File? get pickedImage => _pickedImage;
   String get inputText => _inputText;
   bool get isLoading => _isLoading;
   MisinformationResponse? get apiResponse => _apiResponse;
   String? get apiError => _apiError;
+  
+  bool get isThreatAnalysisLoading => _isThreatAnalysisLoading;
+  ThreatAnalysisResponse? get threatAnalysisResponse => _threatAnalysisResponse;
+  String? get threatAnalysisError => _threatAnalysisError;
 
   void setInputText(String text) {
     _inputText = text;
@@ -31,6 +41,8 @@ class AppProvider extends ChangeNotifier {
     _inputText = "";
     _apiResponse = null;
     _apiError = null;
+    _threatAnalysisResponse = null;
+    _threatAnalysisError = null;
     notifyListeners();
   }
 
@@ -58,6 +70,28 @@ class AppProvider extends ChangeNotifier {
       _apiError = e.toString();
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> analyzeThreat(BuildContext context, String content) async {
+    if (content.isEmpty) return;
+    
+    _isThreatAnalysisLoading = true;
+    _threatAnalysisResponse = null;
+    _threatAnalysisError = null;
+    notifyListeners();
+    
+    Navigator.pushNamed(context, '/threat-analysis');
+
+    try {
+      final response = await _apiService.analyzeThreat(content: content);
+      final jsonResponse = jsonDecode(response);
+      _threatAnalysisResponse = ThreatAnalysisResponse.fromJson(jsonResponse);
+    } catch (e) {
+      _threatAnalysisError = e.toString();
+    } finally {
+      _isThreatAnalysisLoading = false;
       notifyListeners();
     }
   }

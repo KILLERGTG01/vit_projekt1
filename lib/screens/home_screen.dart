@@ -18,6 +18,24 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  void _handleThreatAnalysis(BuildContext context, AppProvider provider) {
+    if (provider.pickedImage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Threat analysis only works with text. Images cannot be analyzed for threats.'),
+          backgroundColor: const Color(0xFFE57373),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+      return;
+    }
+
+    provider.analyzeThreat(context, provider.inputText);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(
@@ -56,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
             actions: [
               if (provider.inputText.isNotEmpty || provider.pickedImage != null)
                 IconButton(
-                  icon: const Icon(Icons.clear, color: Colors.white70),
+                  icon: Icon(Icons.clear, color: Colors.white.withValues(alpha: 0.7)),
                   onPressed: () {
                     provider.clearInputs();
                     _textController.clear();
@@ -76,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Text(
                       'Analyze text or images for misinformation and threats.',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.white70,
+                            color: Colors.white.withValues(alpha: 0.7),
                             fontSize: 16,
                           ),
                       textAlign: TextAlign.center,
@@ -146,6 +164,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
+                  // Check for Threats Button
+                  FilledButton(
+                    onPressed: provider.inputText.isNotEmpty
+                        ? () => _handleThreatAnalysis(context, provider)
+                        : null,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 1.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 3,
+                    ),
+                    child: const Text('CHECK FOR THREATS'),
+                  ),
+                  const SizedBox(height: 18),
+                  // Check for Misinformation Button
                   FilledButton(
                     onPressed: (provider.inputText.isNotEmpty || provider.pickedImage != null)
                         ? () => provider.submitData(context)
@@ -160,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       elevation: 3,
                     ),
-                    child: const Text('ANALYZE'),
+                    child: const Text('CHECK FOR MISINFORMATION'),
                   ),
                   const SizedBox(height: 18),
                 ],
