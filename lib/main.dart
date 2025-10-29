@@ -8,7 +8,11 @@ import 'screens/threat_analysis_screen.dart';
 void main() {
   runApp(
     ChangeNotifierProvider(
-      create: (context) => AppProvider(),
+      create: (context) {
+        final provider = AppProvider();
+        provider.initializeSharedContent();
+        return provider;
+      },
       child: const MyApp(),
     ),
   );

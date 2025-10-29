@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_handler/share_handler.dart';
 import '../api/api_service.dart';
 import '../models/misinformation_response.dart';
 import '../models/threat_analysis_response.dart';
@@ -20,6 +21,50 @@ class AppProvider extends ChangeNotifier {
   bool _isThreatAnalysisLoading = false;
   ThreatAnalysisResponse? _threatAnalysisResponse;
   String? _threatAnalysisError;
+
+  void initializeSharedContent() {
+    print('DEBUG: Initializing share handler');
+    
+    // Initialize the share handler
+    ShareHandler.instance.sharedMediaStream.listen((SharedMedia media) {
+      print('DEBUG: Received shared media: ${media.content}');
+      
+      if (media.content != null && media.content!.isNotEmpty) {
+        // Check if it's an image path or text
+        if (media.content!.startsWith('/') || media.content!.contains('content://')) {
+          // Likely an image path
+          _pickedImage = File(media.content!);
+          print('DEBUG: Set shared image: ${media.content}');
+          notifyListeners();
+        } else {
+          // Treat as text
+          _inputText = media.content!;
+          print('DEBUG: Set shared text: $_inputText');
+          notifyListeners();
+        }
+      }
+    });
+
+    // Get initial shared media (when app is opened from share)
+    ShareHandler.instance.getInitialSharedMedia().then((SharedMedia? media) {
+      print('DEBUG: Initial shared media: ${media?.content}');
+      
+      if (media?.content != null && media!.content!.isNotEmpty) {
+        // Check if it's an image path or text
+        if (media.content!.startsWith('/') || media.content!.contains('content://')) {
+          // Likely an image path
+          _pickedImage = File(media.content!);
+          print('DEBUG: Set initial shared image: ${media.content}');
+          notifyListeners();
+        } else {
+          // Treat as text
+          _inputText = media.content!;
+          print('DEBUG: Set initial shared text: $_inputText');
+          notifyListeners();
+        }
+      }
+    });
+  }
 
   File? get pickedImage => _pickedImage;
   String get inputText => _inputText;

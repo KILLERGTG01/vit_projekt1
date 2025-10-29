@@ -41,6 +41,8 @@ dependencies:
   logger: ^2.6.1
   http_parser: ^4.1.2
   url_launcher: ^6.3.2
+  share_handler: ^0.0.19
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

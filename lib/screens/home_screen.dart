@@ -100,6 +100,44 @@ class _HomeScreenState extends State<HomeScreen> {
                       textAlign: TextAlign.center,
                     ),
                   ),
+                  // Show shared content indicator
+                  if (provider.inputText.isNotEmpty || provider.pickedImage != null)
+                    Container(
+                      margin: const EdgeInsets.only(top: 16, bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.green.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.share,
+                            color: Colors.green,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              provider.pickedImage != null && provider.inputText.isNotEmpty
+                                  ? 'Shared content received: Text and Image'
+                                  : provider.pickedImage != null
+                                      ? 'Shared content received: Image'
+                                      : 'Shared content received: Text',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   const SizedBox(height: 28),
                   if (provider.pickedImage != null)
                     Container(
