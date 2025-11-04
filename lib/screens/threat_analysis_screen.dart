@@ -10,28 +10,15 @@ class ThreatAnalysisScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1419),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1F2E),
-        title: const Text(
-          'Threat Analysis',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.white.withValues(alpha: 0.7)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        elevation: 0,
+        title: const Text('Threat Analysis'),
         centerTitle: true,
       ),
       body: Consumer<AppProvider>(
         builder: (context, provider, child) {
           if (provider.isThreatAnalysisLoading) {
-            return _buildLoadingState();
+            return _buildLoadingState(context);
           }
 
           if (provider.threatAnalysisError != null) {
@@ -42,35 +29,50 @@ class ThreatAnalysisScreen extends StatelessWidget {
             return _buildResponseState(context, provider.threatAnalysisResponse!);
           }
 
-          return _buildNoDataState();
+          return _buildNoDataState(context);
         },
       ),
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(
-            width: 60,
-            height: 60,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B35)),
-            ),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 60,
+                height: 60,
+                child: CircularProgressIndicator(
+                  strokeWidth: 4,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                "Analyzing threats...",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "This may take a few moments",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          Text(
-            "Analyzing threats...",
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -79,53 +81,75 @@ class ThreatAnalysisScreen extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2D1B1B),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE57373), width: 1),
-              ),
-              child: const Icon(
-                Icons.security_rounded,
-                color: Color(0xFFE57373),
-                size: 48,
-              ),
+        child: Card(
+          color: Theme.of(context).colorScheme.errorContainer,
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    Icons.security_rounded,
+                    color: Theme.of(context).colorScheme.error,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  "Analysis Failed",
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  error,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onErrorContainer.withValues(alpha: 0.8),
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            Text(
-              "Analysis Failed",
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              error,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildNoDataState() {
+  Widget _buildNoDataState(BuildContext context) {
     return Center(
-      child: Text(
-        "No threat analysis data available",
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.6),
-          fontSize: 16,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Theme.of(context).colorScheme.primary,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "No threat analysis data available",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -207,7 +231,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
           Text(
             response.threatSummary,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.87),
+              color: threatConfig.color.withValues(alpha: 0.8),
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -219,83 +243,68 @@ class ThreatAnalysisScreen extends StatelessWidget {
   }
 
   Widget _buildContentPreviewCard(BuildContext context, String contentPreview) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4FC3F7).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.preview_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.preview_outlined,
-                  color: Color(0xFF4FC3F7),
-                  size: 20,
+                const SizedBox(width: 12),
+                Text(
+                  'Content Preview',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                  width: 1,
                 ),
               ),
-              const SizedBox(width: 12),
-              const Text(
-                'Content Preview',
+              child: Text(
+                contentPreview,
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.87),
+                  fontSize: 14,
+                  height: 1.5,
+                  fontFamily: 'monospace',
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F1419),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.08),
-                width: 1,
-              ),
             ),
-            child: Text(
-              contentPreview,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.87),
-                fontSize: 14,
-                height: 1.5,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildUrlsFoundCard(BuildContext context, List<String> urls) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -316,8 +325,8 @@ class ThreatAnalysisScreen extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'URLs Found (${urls.length})',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -334,10 +343,10 @@ class ThreatAnalysisScreen extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F1419),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -353,6 +362,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
             },
           ),
         ],
+        ),
       ),
     );
   }
@@ -362,7 +372,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.1),
@@ -390,7 +400,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
               const Text(
                 'Security Analysis',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -418,7 +428,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F1419),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: threatColor.withValues(alpha: 0.3),
@@ -477,7 +487,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
               Text(
                 'Scanned: ${analysis.scanDate}',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: Colors.black,
                   fontSize: 10,
                 ),
               ),
@@ -526,7 +536,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.1),
@@ -554,7 +564,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
               const Text(
                 'Recommendations',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -585,7 +595,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
                     child: Text(
                       recommendations[index],
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.87),
+                        color: Colors.black,
                         fontSize: 14,
                         height: 1.5,
                       ),
@@ -605,7 +615,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.1),
@@ -625,7 +635,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
                 ),
                 child: Icon(
                   Icons.info_outline_rounded,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Colors.red,
                   size: 20,
                 ),
               ),
@@ -633,7 +643,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
               const Text(
                 'Analysis Details',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -665,7 +675,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.6),
+            color: Colors.black,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -674,7 +684,7 @@ class ThreatAnalysisScreen extends StatelessWidget {
         Text(
           value,
           style: const TextStyle(
-            color: Colors.white,
+            color: Colors.black,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),

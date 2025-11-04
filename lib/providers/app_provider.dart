@@ -30,6 +30,9 @@ class AppProvider extends ChangeNotifier {
   
   // Sharing intent streams
   late StreamSubscription _intentDataStreamSubscription;
+  
+  // Track if content was actually shared from another app
+  bool _hasSharedContent = false;
 
   void initializeSharedContent() {
     _logger.d('Initializing sharing intent handlers');
@@ -97,6 +100,7 @@ class AppProvider extends ChangeNotifier {
             
             await sourceFile.copy(targetFile.path);
             _pickedImage = targetFile;
+            _hasSharedContent = true; // Mark as shared content
             _logger.d('Successfully set shared image: ${targetFile.path}');
             notifyListeners();
             break; // Only process the first image
@@ -116,9 +120,7 @@ class AppProvider extends ChangeNotifier {
     if (media.content != null && media.content!.isNotEmpty) {
       // Handle text content (check if content looks like text)
       if (!media.content!.startsWith('/') && !media.content!.contains('content://')) {
-        _inputText = media.content!;
-        _logger.d('Set shared text: $_inputText');
-        notifyListeners();
+        _setSharedText(media.content!);
         return;
       }
       
@@ -128,21 +130,18 @@ class AppProvider extends ChangeNotifier {
           File? imageFile = await _processSharedImage(media.content!);
           if (imageFile != null) {
             _pickedImage = imageFile;
+            _hasSharedContent = true; // Mark as shared content
             _logger.d('Set shared image (fallback): ${imageFile.path}');
             notifyListeners();
           }
         } catch (e) {
           _logger.e('Error processing shared image (fallback): $e');
           // If image processing fails, treat as text
-          _inputText = media.content!;
-          _logger.d('Set shared text (fallback): $_inputText');
-          notifyListeners();
+          _setSharedText(media.content!);
         }
       } else {
         // Treat as text
-        _inputText = media.content!;
-        _logger.d('Set shared text: $_inputText');
-        notifyListeners();
+        _setSharedText(media.content!);
       }
     }
   }
@@ -205,9 +204,30 @@ class AppProvider extends ChangeNotifier {
   bool get isThreatAnalysisLoading => _isThreatAnalysisLoading;
   ThreatAnalysisResponse? get threatAnalysisResponse => _threatAnalysisResponse;
   String? get threatAnalysisError => _threatAnalysisError;
+  
+  // Check if content was actually shared from another app
+  bool get hasSharedContent => _hasSharedContent;
 
   void setInputText(String text) {
     _inputText = text;
+    // Don't automatically reset shared flag here, as this method is called
+    // both for manual input and when setting shared text
+    notifyListeners();
+  }
+  
+  // Method specifically for manual text input (called from UI)
+  void setManualInputText(String text) {
+    _inputText = text;
+    // This is manual input, not shared content
+    _hasSharedContent = false;
+    notifyListeners();
+  }
+  
+  // Helper method to set shared text content
+  void _setSharedText(String text) {
+    _inputText = text;
+    _hasSharedContent = true; // Mark as shared content
+    _logger.d('Set shared text: $_inputText');
     notifyListeners();
   }
   
@@ -218,6 +238,7 @@ class AppProvider extends ChangeNotifier {
     _apiError = null;
     _threatAnalysisResponse = null;
     _threatAnalysisError = null;
+    _hasSharedContent = false; // Reset shared content flag
     
     // Reset sharing intent to clear any cached shared content
     ReceiveSharingIntent.instance.reset();
@@ -235,6 +256,8 @@ class AppProvider extends ChangeNotifier {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       _pickedImage = File(image.path);
+      // This is manually picked, not shared content
+      // Don't change _hasSharedContent flag here
       notifyListeners();
     }
   }

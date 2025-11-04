@@ -10,28 +10,15 @@ class ResponseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1419),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1F2E),
-        title: const Text(
-          'Analysis Report',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.white.withValues(alpha: 0.7)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        elevation: 0,
+        title: const Text('Analysis Report'),
         centerTitle: true,
       ),
       body: Consumer<AppProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return _buildLoadingState();
+            return _buildLoadingState(context);
           }
 
           if (provider.apiError != null) {
@@ -42,35 +29,50 @@ class ResponseScreen extends StatelessWidget {
             return _buildResponseState(context, provider.apiResponse!);
           }
 
-          return _buildNoDataState();
+          return _buildNoDataState(context);
         },
       ),
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(
-            width: 60,
-            height: 60,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4FC3F7)),
-            ),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 60,
+                height: 60,
+                child: CircularProgressIndicator(
+                  strokeWidth: 4,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                "Analyzing content...",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "This may take a few moments",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          Text(
-            "Analyzing content...",
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -79,53 +81,75 @@ class ResponseScreen extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2D1B1B),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE57373), width: 1),
-              ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                color: Color(0xFFE57373),
-                size: 48,
-              ),
+        child: Card(
+          color: Theme.of(context).colorScheme.errorContainer,
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    Icons.error_outline_rounded,
+                    color: Theme.of(context).colorScheme.error,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  "Analysis Failed",
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  error,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onErrorContainer.withValues(alpha: 0.8),
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            Text(
-              "Analysis Failed",
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              error,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildNoDataState() {
-    return const Center(
-      child: Text(
-        "No analysis data available",
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 16,
+  Widget _buildNoDataState(BuildContext context) {
+    return Center(
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Theme.of(context).colorScheme.primary,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "No analysis data available",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -213,56 +237,49 @@ class ResponseScreen extends StatelessWidget {
   }
 
   Widget _buildExplanationCard(BuildContext context, String explanation) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4FC3F7).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.description_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.description_outlined,
-                  color: Color(0xFF4FC3F7),
-                  size: 20,
+                const SizedBox(width: 12),
+                Text(
+                  'Detailed Analysis',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Detailed Analysis',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            explanation,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.87),
-              fontSize: 15,
-              height: 1.6,
-              fontWeight: FontWeight.w400,
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text(
+              explanation,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.87),
+                fontSize: 15,
+                height: 1.6,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -310,14 +327,14 @@ class ResponseScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Advanced Threat Analysis',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -376,56 +393,49 @@ class ResponseScreen extends StatelessWidget {
   }
 
   Widget _buildSourcesCard(BuildContext context, List<String> sources) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
-          width: 1,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF66BB6A).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.link_rounded,
+                    color: Color(0xFF66BB6A),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Sources (${sources.length})',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: sources.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                return _buildSourceItem(sources[index], index + 1, context);
+              },
+            ),
+          ],
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF66BB6A).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.link_rounded,
-                  color: Color(0xFF66BB6A),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Sources (${sources.length})',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: sources.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              return _buildSourceItem(sources[index], index + 1, context);
-            },
-          ),
-        ],
       ),
     );
   }
@@ -439,10 +449,10 @@ class ResponseScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F1419),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -452,14 +462,14 @@ class ResponseScreen extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFF4FC3F7).withValues(alpha: 0.15),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
                 child: Text(
                   '$index',
-                  style: const TextStyle(
-                    color: Color(0xFF4FC3F7),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -473,8 +483,8 @@ class ResponseScreen extends StatelessWidget {
                 children: [
                   Text(
                     domain,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -483,7 +493,7 @@ class ResponseScreen extends StatelessWidget {
                   Text(
                     url,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: 12,
                     ),
                     maxLines: 2,
@@ -493,9 +503,9 @@ class ResponseScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const Icon(
+            Icon(
               Icons.open_in_new_rounded,
-              color: Color(0xFF4FC3F7),
+              color: Theme.of(context).colorScheme.primary,
               size: 18,
             ),
           ],

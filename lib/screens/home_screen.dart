@@ -22,12 +22,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (provider.pickedImage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Threat analysis only works with text. Images cannot be analyzed for threats.'),
+          content: const Text(
+            'Threat analysis only works with text. Images cannot be analyzed for threats.',
+          ),
           backgroundColor: const Color(0xFFE57373),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
       return;
@@ -54,194 +54,330 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return Scaffold(
-          backgroundColor: const Color(0xFF181C23),
           appBar: AppBar(
-            backgroundColor: const Color(0xFF232733),
             title: Row(
               children: [
-                const Icon(Icons.shield, color: Colors.blueAccent, size: 30),
-                const SizedBox(width: 10),
-                Text(
-                  'UnPhishy',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.blueAccent,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.security,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
+                const SizedBox(width: 12),
+                const Text('UnPhishy'),
               ],
             ),
             actions: [
               if (provider.inputText.isNotEmpty || provider.pickedImage != null)
-                IconButton(
-                  icon: Icon(Icons.clear, color: Colors.white.withValues(alpha: 0.7)),
-                  onPressed: () {
-                    provider.clearInputs();
-                    _textController.clear();
-                  },
-                )
-            ],
-            elevation: 4,
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(18.0),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 18),
-                  Center(
-                    child: Text(
-                      'Analyze text or images for misinformation and threats.',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 16,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  // Show shared content indicator
-                  if (provider.inputText.isNotEmpty || provider.pickedImage != null)
-                    Container(
-                      margin: const EdgeInsets.only(top: 16, bottom: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.green.withValues(alpha: 0.3),
-                          width: 1,
+                  child: IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.white),
+                    onPressed: () {
+                      provider.clearInputs();
+                      _textController.clear();
+                    },
+                  ),
+                ),
+            ],
+          ),
+          backgroundColor: Colors.white,
+          body: Padding(
+            padding: const EdgeInsets.all(20.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (provider.hasSharedContent)
+                      Container(
+                        margin: const EdgeInsets.only(top: 16, bottom: 12),
+                        child: Card(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.share,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Shared Content Received',
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimaryContainer,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        provider.pickedImage != null &&
+                                                provider.inputText.isNotEmpty
+                                            ? 'Text and Image ready for analysis'
+                                            : provider.pickedImage != null
+                                            ? 'Image ready for analysis'
+                                            : 'Text ready for analysis',
+                                        style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimaryContainer
+                                              .withValues(alpha: 0.8),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.share,
-                            color: Colors.green,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              provider.pickedImage != null && provider.inputText.isNotEmpty
-                                  ? 'Shared content received: Text and Image'
-                                  : provider.pickedImage != null
-                                      ? 'Shared content received: Image'
-                                      : 'Shared content received: Text',
+                    const SizedBox(height: 24),
+                    // Image preview card
+                    if (provider.pickedImage != null)
+                      Card(
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 200,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: FileImage(provider.pickedImage!),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.image,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Image ready for analysis',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    // Text input card
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.edit_note,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Text Analysis',
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _textController,
+                              onChanged: (text) =>
+                                  provider.setManualInputText(text),
                               style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              maxLines: 4,
+                              decoration: const InputDecoration(
+                                labelText:
+                                    'Enter text to analyze for misinformation or threats',
+                                hintText:
+                                    'Paste suspicious messages, news, or any text content here...',
+                                contentPadding: EdgeInsets.all(16),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Image picker card
+                    Card(
+                      child: InkWell(
+                        onTap: provider.pickImageFromGallery,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.add_photo_alternate,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  size: 32,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Add Image for Analysis',
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Upload screenshots, memes, or any suspicious images',
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withValues(alpha: 0.7),
+                                  fontSize: 14,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Action buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: provider.inputText.isNotEmpty
+                                ? () => _handleThreatAnalysis(context, provider)
+                                : null,
+                            icon: const Icon(Icons.security, size: 20),
+                            label: const Text('Check Threats'),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              textStyle: const TextStyle(
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(height: 28),
-                  if (provider.pickedImage != null)
-                    Container(
-                      height: 220,
-                      margin: const EdgeInsets.only(bottom: 18),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.blueAccent, width: 2),
-                        image: DecorationImage(
-                          image: FileImage(provider.pickedImage!),
-                          fit: BoxFit.cover,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blueAccent.withValues(alpha: 0.15),
-                            blurRadius: 12,
-                            offset: const Offset(0, 6),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed:
+                                (provider.inputText.isNotEmpty ||
+                                    provider.pickedImage != null)
+                                ? () => provider.submitData(context)
+                                : null,
+                            icon: const Icon(Icons.fact_check, size: 20),
+                            label: const Text('Check Facts'),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              textStyle: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // Info card
+                    Card(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Tip: You can share content directly from other apps to UnPhishy for quick analysis.',
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  TextField(
-                    controller: _textController,
-                    onChanged: (text) => provider.setInputText(text),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'Enter text here',
-                      labelStyle: const TextStyle(color: Colors.blueAccent),
-                      filled: true,
-                      fillColor: const Color(0xFF232733),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Colors.blueAccent),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Colors.blueAccent),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Colors.lightBlueAccent, width: 2),
-                      ),
-                    ),
-                    // Allow text input even if image is picked
-                    enabled: true,
-                  ),
-                  const SizedBox(height: 22),
-                  ElevatedButton.icon(
-                    onPressed: provider.pickImageFromGallery,
-                    icon: const Icon(Icons.photo_library, color: Colors.blueAccent),
-                    label: const Text('Pick an Image from Gallery'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF232733),
-                      foregroundColor: Colors.blueAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: const BorderSide(color: Colors.blueAccent),
-                      ),
-                      elevation: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  // Check for Threats Button
-                  FilledButton(
-                    onPressed: provider.inputText.isNotEmpty
-                        ? () => _handleThreatAnalysis(context, provider)
-                        : null,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 1.1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 3,
-                    ),
-                    child: const Text('CHECK FOR THREATS'),
-                  ),
-                  const SizedBox(height: 18),
-                  // Check for Misinformation Button
-                  FilledButton(
-                    onPressed: (provider.inputText.isNotEmpty || provider.pickedImage != null)
-                        ? () => provider.submitData(context)
-                        : null,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 1.1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 3,
-                    ),
-                    child: const Text('CHECK FOR MISINFORMATION'),
-                  ),
-                  const SizedBox(height: 18),
-                ],
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
-          ),
         );
       },
     );
