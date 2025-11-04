@@ -1,201 +1,291 @@
 import 'dart:io';
-import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-  static const String _baseUrl =
-      "https://api.abhinavganeshan.in/api/misinformation/check";
-  static const String _threatAnalysisUrl =
-      "https://api.abhinavganeshan.in/api/message-threat/analyze";
+  static const String _baseUrl = "https://api.abhinavganeshan.in/api/misinformation/check";
+  static const String _threatAnalysisUrl = "https://api.abhinavganeshan.in/api/message-threat/analyze";
+  
   final Logger _logger = Logger();
+  late final Dio _dio;
 
-  /// Generates a curl command equivalent for debugging purposes
-  String _generateCurlCommand(String url, Map<String, String> headers, {String? body, String? formData}) {
-    final buffer = StringBuffer();
-    buffer.write('curl -X POST ');
-    
-    // Add headers
-    headers.forEach((key, value) {
-      buffer.write('-H "$key: $value" ');
-    });
-    
-    // Add body or form data
-    if (body != null) {
-      buffer.write('--data "$body" ');
-    } else if (formData != null) {
-      buffer.write('--data "$formData" ');
-    }
-    
-    buffer.write('"$url"');
-    return buffer.toString();
+  ApiService() {
+    _dio = Dio();
+    _configureDio();
   }
 
-  Future<String> sendData({String? text, File? imageFile}) async {
-    if ((text == null || text.isEmpty) && imageFile == null) {
-      throw Exception("No data to send.");
+  void _configureDio() {
+    _dio.options.connectTimeout = const Duration(seconds: 30);
+    _dio.options.receiveTimeout = const Duration(seconds: 30);
+    _dio.options.followRedirects = true; // This matches curl --location
+    _dio.options.maxRedirects = 5;
+    _dio.options.headers = {
+      'Accept': '*/*',
+      'User-Agent': 'curl/7.68.0', // Match curl user agent
+    };
+  }
+
+  /// Validates input data and throws appropriate exceptions
+  void _validateInputs({String? text, File? imageFile}) {
+    final hasValidText = text != null && text.trim().isNotEmpty;
+    final hasValidImage = imageFile != null;
+    
+    if (!hasValidText && !hasValidImage) {
+      throw Exception("No valid data to send. Both text and image are empty or null.");
     }
+  }
+
+  /// Validates image file and returns processed data
+  Future<Map<String, dynamic>> _validateAndProcessImage(File imageFile) async {
+    _logger.i('🔍 Validating image file: ${imageFile.path}');
+    
+    final allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+    final ext = imageFile.path.split('.').last.toLowerCase();
+    
+    _logger.i('   Extension: $ext');
+    
+    if (!allowedExtensions.contains(ext)) {
+      throw Exception("Invalid image format '$ext'. Only PNG, JPG, JPEG, and WEBP are allowed.");
+    }
+    
+    final fileExists = await imageFile.exists();
+    _logger.i('   File exists: $fileExists');
+    
+    if (!fileExists) {
+      throw Exception("Image file does not exist: ${imageFile.path}");
+    }
+    
+    final fileSize = await imageFile.length();
+    _logger.i('   File size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
+    
+    if (fileSize == 0) {
+      throw Exception("Image file is empty: ${imageFile.path}");
+    }
+    
+    // Check if file is too large (e.g., > 10MB)
+    if (fileSize > 10 * 1024 * 1024) {
+      _logger.w('⚠️ Large file detected: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB');
+    }
+    
+    final imageBytes = await imageFile.readAsBytes();
+    _logger.i('   Bytes read: ${imageBytes.length}');
+    
+    if (imageBytes.isEmpty) {
+      throw Exception("Image file contains no data");
+    }
+    
+    // Basic format validation
+    if (ext == 'png' && imageBytes.length >= 8) {
+      final isPng = imageBytes[0] == 0x89 && imageBytes[1] == 0x50 && 
+                   imageBytes[2] == 0x4E && imageBytes[3] == 0x47;
+      _logger.i('   PNG format check: $isPng');
+    } else if ((ext == 'jpg' || ext == 'jpeg') && imageBytes.length >= 2) {
+      final isJpeg = imageBytes[0] == 0xFF && imageBytes[1] == 0xD8;
+      _logger.i('   JPEG format check: $isJpeg');
+    }
+    
+    // Determine content type
+    String contentType;
+    switch (ext) {
+      case 'png':
+        contentType = 'image/png';
+        break;
+      case 'webp':
+        contentType = 'image/webp';
+        break;
+      case 'jpg':
+      case 'jpeg':
+      default:
+        contentType = 'image/jpeg';
+        break;
+    }
+    
+    _logger.i('   Content-Type: $contentType');
+    
+    return {
+      'bytes': imageBytes,
+      'filename': imageFile.path.split('/').last,
+      'contentType': contentType,
+      'size': fileSize,
+    };
+  }
+
+
+  /// Test method that exactly replicates your working curl commands
+  Future<String> testCurlReplication() async {
+    _logger.i('🧪 TESTING EXACT CURL REPLICATION');
+    
+    try {
+      // Test 1: curl --location --form 'text="grok is smarter than gemini"'
+      _logger.i('📝 Test 1: Text-only request');
+      final formData1 = FormData();
+      formData1.fields.add(const MapEntry('text', 'grok is smarter than gemini'));
+      
+      final response1 = await _dio.post(
+        _baseUrl,
+        data: formData1,
+        options: Options(
+          headers: {
+            'Accept': '*/*',
+            'User-Agent': 'curl/7.68.0',
+          },
+          followRedirects: true,
+          maxRedirects: 5,
+        ),
+      );
+      
+      _logger.i('✅ Test 1 SUCCESS: Status ${response1.statusCode}');
+      
+      return response1.data.toString();
+    } catch (e) {
+      _logger.e('❌ Curl replication test failed: $e');
+      if (e is DioException) {
+        _logger.e('   Status: ${e.response?.statusCode}');
+        _logger.e('   Response: ${e.response?.data}');
+        _logger.e('   Headers: ${e.response?.headers.map}');
+      }
+      rethrow;
+    }
+  }
+
+  /// Main method for sending data - exactly matches curl --location --form format
+  Future<String> sendData({String? text, File? imageFile}) async {
+    _validateInputs(text: text, imageFile: imageFile);
 
     try {
-      _logger.i('🚀 MISINFORMATION CHECK - Starting API Request');
-      _logger.i('📍 Endpoint: $_baseUrl');
-      _logger.i('🔧 Method: POST (multipart/form-data)');
+      // Create FormData exactly like curl --form
+      final formData = FormData();
       
-      var request = http.MultipartRequest('POST', Uri.parse(_baseUrl));
-
-      // Add text field if provided
-      if (text != null && text.isNotEmpty) {
-        _logger.i('📝 Adding text field:');
-        _logger.i('   Field name: "text"');
-        _logger.i('   Content: "$text"');
-        _logger.i('   Length: ${text.length} characters');
-        request.fields['text'] = text;
-      } else {
-        _logger.i('📝 No text content provided');
+      // Add text field if provided (curl --form 'text="value"')
+      if (text != null && text.trim().isNotEmpty) {
+        final trimmedText = text.trim();
+        formData.fields.add(MapEntry('text', trimmedText));
+        _logger.i('✅ Added text field: "$trimmedText"');
       }
-
-      // Add image file if provided
+      
       if (imageFile != null) {
-        final allowedExtensions = ['jpg', 'png', 'webp'];
-        String ext = imageFile.path.split('.').last.toLowerCase();
-        if (!allowedExtensions.contains(ext)) {
-          throw Exception(
-            "Invalid image format. Only PNG, JPG, and WEBP are allowed.",
-          );
-        }
+        final imageData = await _validateAndProcessImage(imageFile);
         
-        final fileExists = await imageFile.exists();
-        final fileSize = fileExists ? await imageFile.length() : 0;
-        
-        _logger.i('🖼️ Adding image file:');
-        _logger.i('   Field name: "image"');
-        _logger.i('   File path: ${imageFile.path}');
-        _logger.i('   File extension: $ext');
-        _logger.i('   File exists: $fileExists');
-        _logger.i('   File size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
-
-        MediaType mediaType;
-        if (ext == 'png') {
-          mediaType = MediaType('image', 'png');
-        } else if (ext == 'webp') {
-          mediaType = MediaType('image', 'webp');
-        } else {
-          mediaType = MediaType('image', 'jpeg');
-        }
-        
-        _logger.i('   Content-Type: ${mediaType.mimeType}');
-        
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'image',
-            imageFile.path,
-            contentType: mediaType,
-          ),
+        // Create MultipartFile exactly like curl does
+        final multipartFile = MultipartFile.fromBytes(
+          imageData['bytes'],
+          filename: imageData['filename'],
+          contentType: MediaType.parse(imageData['contentType']),
         );
-      } else {
-        _logger.i('🖼️ No image file provided');
+        
+        formData.files.add(MapEntry('image', multipartFile));
       }
-
-      // Log complete payload summary
-      _logger.i('📦 PAYLOAD SUMMARY:');
-      _logger.i('   Text fields: ${request.fields.keys.toList()}');
-      _logger.i('   File fields: ${request.files.map((f) => '${f.field} (${f.filename})').toList()}');
-      _logger.i('   Total fields: ${request.fields.length + request.files.length}');
       
-      // Log headers
-      _logger.i('📋 Request Headers:');
-      request.headers.forEach((key, value) {
-        _logger.i('   $key: $value');
-      });
-
-      _logger.i('⏳ Sending request...');
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
+      
+      // Send request with explicit options to match curl behavior
+      final response = await _dio.post(
+        _baseUrl,
+        data: formData,
+        options: Options(
+          headers: {
+            'Accept': '*/*',
+            'User-Agent': 'curl/7.68.0',
+          },
+          followRedirects: true,
+          maxRedirects: 5,
+          validateStatus: (status) => status != null && status < 500, // Accept redirects
+        ),
+      );
+      
       _logger.i('✅ Response received:');
-      _logger.i('   Status Code: ${response.statusCode}');
-      _logger.i('   Response Headers: ${response.headers}');
-      _logger.i('   Response Body Length: ${response.body.length} characters');
-      _logger.i('   Response Body: ${response.body}');
-
+      _logger.i('   Status: ${response.statusCode}');
+      _logger.i('   Headers: ${response.headers.map}');
+      _logger.i('   Body length: ${response.data.toString().length} chars');
+      
       if (response.statusCode == 200) {
-        _logger.i('🎉 MISINFORMATION CHECK - Request successful!');
-        return response.body;
+        // Check if response.data is already a Map (parsed JSON) or a String
+        if (response.data is Map) {
+          _logger.i('📄 Response is already parsed as Map');
+          return jsonEncode(response.data); // Convert Map back to JSON string
+        } else {
+          _logger.i('📄 Response is raw string');
+          return response.data.toString();
+        }
+      } else if (response.statusCode == 500) {
+        // Handle server-side validation errors
+        final responseData = response.data;
+        if (responseData is Map && responseData.containsKey('detail')) {
+          final detail = responseData['detail'].toString();
+          if (detail.contains('validation error') && detail.contains('verdict')) {
+            _logger.w('⚠️ Server-side validation error detected - this is a backend issue');
+            _logger.w('   The server returned an invalid verdict format');
+            throw Exception("Server validation error: The backend returned an invalid response format. This is a server-side issue that needs to be fixed.");
+          }
+        }
+        _logger.e('❌ Server error (500): ${response.data}');
+        throw Exception("Server error (500): ${response.data}");
       } else {
-        _logger.e('❌ MISINFORMATION CHECK - Request failed!');
-        _logger.e('   Status: ${response.statusCode}');
-        _logger.e('   Body: ${response.body}');
-        throw Exception("Failed to send data. Status: ${response.statusCode}");
+        _logger.e('❌ Non-200 status: ${response.statusCode}');
+        _logger.e('   Response body: ${response.data}');
+        throw Exception("Request failed with status: ${response.statusCode} - ${response.data}");
       }
     } catch (e) {
-      _logger.e('💥 MISINFORMATION CHECK - Exception occurred: $e');
-      throw Exception("An error occurred: $e");
+      _logger.e('❌ Request failed: $e');
+      if (e is DioException) {
+        _logger.e('   Type: ${e.type}');
+        _logger.e('   Message: ${e.message}');
+        _logger.e('   Request URL: ${e.requestOptions.uri}');
+        _logger.e('   Request headers: ${e.requestOptions.headers}');
+        _logger.e('   Response status: ${e.response?.statusCode}');
+        _logger.e('   Response headers: ${e.response?.headers.map}');
+        _logger.e('   Response data: ${e.response?.data}');
+      }
+      rethrow;
     }
   }
 
+
+
+
+
+
+
+  /// Threat analysis method using form-encoded data
   Future<String> analyzeThreat({
     required String content,
     String messageType = 'sms',
   }) async {
-    if (content.isEmpty) {
-      throw Exception("No content to analyze.");
+    final trimmedContent = content.trim();
+    if (trimmedContent.isEmpty) {
+      throw Exception("No valid content to analyze. Content is empty or contains only whitespace.");
     }
 
-    try {
-      _logger.i('🛡️ THREAT ANALYSIS - Starting API Request');
-      _logger.i('📍 Endpoint: $_threatAnalysisUrl');
-      _logger.i('🔧 Method: POST (application/x-www-form-urlencoded)');
-      
-      final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-      final body = {'content': content, 'message_type': messageType};
-      
-      _logger.i('📋 Request Headers:');
-      headers.forEach((key, value) {
-        _logger.i('   $key: $value');
-      });
-      
-      _logger.i('📦 PAYLOAD DETAILS:');
-      _logger.i('   Field: "content"');
-      _logger.i('   Content: "$content"');
-      _logger.i('   Content Length: ${content.length} characters');
-      _logger.i('   Field: "message_type"');
-      _logger.i('   Message Type: "$messageType"');
-      
-      _logger.i('📝 Raw Form Data:');
-      final formData = body.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
-      _logger.i('   $formData');
-      _logger.i('   Form Data Length: ${formData.length} characters');
-      
-      _logger.i('🔧 Equivalent curl command:');
-      _logger.i('   ${_generateCurlCommand(_threatAnalysisUrl, headers, formData: formData)}');
 
-      _logger.i('⏳ Sending request...');
-      final response = await http.post(
-        Uri.parse(_threatAnalysisUrl),
-        headers: headers,
-        body: body,
+    try {
+      final body = <String, String>{
+        'content': trimmedContent,
+        if (messageType.trim().isNotEmpty) 'message_type': messageType.trim(),
+      };
+      
+      _logger.i('📡 Sending form-encoded request...');
+      final response = await _dio.post(
+        _threatAnalysisUrl,
+        data: body,
+        options: Options(
+          contentType: 'application/x-www-form-urlencoded',
+        ),
       );
 
-      _logger.i('✅ Response received:');
-      _logger.i('   Status Code: ${response.statusCode}');
-      _logger.i('   Response Headers: ${response.headers}');
-      _logger.i('   Response Body Length: ${response.body.length} characters');
-      _logger.i('   Response Body: ${response.body}');
-
       if (response.statusCode == 200) {
-        _logger.i('🎉 THREAT ANALYSIS - Request successful!');
-        return response.body;
+        return response.data.toString();
       } else {
-        _logger.e('❌ THREAT ANALYSIS - Request failed!');
-        _logger.e('   Status: ${response.statusCode}');
-        _logger.e('   Body: ${response.body}');
-        throw Exception(
-          "Failed to analyze threat. Status: ${response.statusCode}",
-        );
+        throw Exception("Request failed with status: ${response.statusCode}");
       }
     } catch (e) {
-      _logger.e('💥 THREAT ANALYSIS - Exception occurred: $e');
-      throw Exception("An error occurred during threat analysis: $e");
+      _logger.e('❌ Threat analysis failed: $e');
+      if (e is DioException) {
+        _logger.e('   Type: ${e.type}');
+        _logger.e('   Response: ${e.response?.data}');
+        _logger.e('   Status: ${e.response?.statusCode}');
+      }
+      rethrow;
     }
   }
 }

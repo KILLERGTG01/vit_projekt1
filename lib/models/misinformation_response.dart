@@ -1,12 +1,14 @@
 class MisinformationResponse {
   final String verdict;
   final String explanation;
+  final List<String> claims;
   final List<String> sources;
   final DebugInfo? debugInfo;
 
   MisinformationResponse({
     required this.verdict,
     required this.explanation,
+    required this.claims,
     required this.sources,
     this.debugInfo,
   });
@@ -15,6 +17,7 @@ class MisinformationResponse {
     return MisinformationResponse(
       verdict: json['verdict'] ?? '',
       explanation: json['explanation'] ?? '',
+      claims: List<String>.from(json['claims'] ?? []),
       sources: List<String>.from(json['sources'] ?? []),
       debugInfo: json['debug_info'] != null 
           ? DebugInfo.fromJson(json['debug_info']) 

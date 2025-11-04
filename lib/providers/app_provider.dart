@@ -263,28 +263,58 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> submitData(BuildContext context) async {
-    if (_inputText.isEmpty && _pickedImage == null) return;
+    // Validate that we have at least one valid field
+    final hasValidText = _inputText.trim().isNotEmpty;
+    final hasValidImage = _pickedImage != null;
+    
+    if (!hasValidText && !hasValidImage) {
+      _logger.w('⚠️ No valid data to submit - both text and image are empty');
+      return;
+    }
     
     _logger.i('🔍 MISINFORMATION CHECK - Initiated by user');
-    _logger.i('   Text content: ${_inputText.isNotEmpty ? '"$_inputText"' : 'None'}');
-    _logger.i('   Image file: ${_pickedImage != null ? _pickedImage!.path : 'None'}');
+    _logger.i('   Text content: ${hasValidText ? '"${_inputText.trim()}"' : 'None (empty/whitespace)'}');
+    _logger.i('   Image file: ${hasValidImage ? _pickedImage!.path : 'None'}');
     
     _isLoading = true;
     _apiResponse = null;
     _apiError = null;
     notifyListeners();
-    Navigator.pushNamed(context, '/response');
+    if (context.mounted) {
+      Navigator.pushNamed(context, '/response');
+    }
 
     try {
       _logger.i('📡 Calling API service...');
-      final response = await _apiService.sendData(text: _inputText, imageFile: _pickedImage);
+      final textToSend = hasValidText ? _inputText.trim() : null;
+      final response = await _apiService.sendData(text: textToSend, imageFile: _pickedImage);
       _logger.i('✅ API response received, parsing JSON...');
-      final jsonResponse = jsonDecode(response);
+      _logger.i('Raw response: ${response.substring(0, response.length > 200 ? 200 : response.length)}...');
+      
+      // Parse the JSON response
+      Map<String, dynamic> jsonResponse;
+      try {
+        jsonResponse = jsonDecode(response);
+        _logger.i('✅ JSON parsing successful');
+      } catch (formatException) {
+        _logger.e('❌ JSON parsing failed: $formatException');
+        _logger.i('Raw response causing error: $response');
+        throw Exception('Failed to parse server response: ${formatException.toString()}');
+      }
+      
       _apiResponse = MisinformationResponse.fromJson(jsonResponse);
       _logger.i('🎯 Misinformation analysis completed successfully');
     } catch (e) {
       _logger.e('❌ Misinformation analysis failed: $e');
-      _apiError = e.toString();
+      
+      // Provide user-friendly error messages
+      if (e.toString().contains('Server validation error')) {
+        _apiError = "The server is experiencing a technical issue with response formatting. Please try again later or contact support.";
+      } else if (e.toString().contains('500')) {
+        _apiError = "Server error occurred. The request was sent correctly but the server encountered an issue processing it.";
+      } else {
+        _apiError = e.toString();
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -292,22 +322,29 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> analyzeThreat(BuildContext context, String content) async {
-    if (content.isEmpty) return;
+    // Validate content is not empty or just whitespace
+    final trimmedContent = content.trim();
+    if (trimmedContent.isEmpty) {
+      _logger.w('⚠️ No valid content to analyze - content is empty or whitespace only');
+      return;
+    }
     
     _logger.i('🛡️ THREAT ANALYSIS - Initiated by user');
-    _logger.i('   Content to analyze: "$content"');
-    _logger.i('   Content length: ${content.length} characters');
+    _logger.i('   Content to analyze: "$trimmedContent"');
+    _logger.i('   Content length: ${trimmedContent.length} characters');
     
     _isThreatAnalysisLoading = true;
     _threatAnalysisResponse = null;
     _threatAnalysisError = null;
     notifyListeners();
     
-    Navigator.pushNamed(context, '/threat-analysis');
+    if (context.mounted) {
+      Navigator.pushNamed(context, '/threat-analysis');
+    }
 
     try {
       _logger.i('📡 Calling threat analysis API service...');
-      final response = await _apiService.analyzeThreat(content: content);
+      final response = await _apiService.analyzeThreat(content: trimmedContent);
       _logger.i('✅ Threat analysis API response received, parsing JSON...');
       final jsonResponse = jsonDecode(response);
       _threatAnalysisResponse = ThreatAnalysisResponse.fromJson(jsonResponse);
@@ -318,6 +355,8 @@ class AppProvider extends ChangeNotifier {
     } finally {
       _isThreatAnalysisLoading = false;
       notifyListeners();
-    }
+    } 
   }
+
+
 }
