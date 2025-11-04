@@ -62,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const Icon(Icons.shield, color: Colors.blueAccent, size: 30),
                 const SizedBox(width: 10),
                 Text(
-                  'CyberSec Analyzer',
+                  'UnPhishy',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Colors.blueAccent,
                         fontWeight: FontWeight.bold,

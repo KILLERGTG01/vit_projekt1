@@ -3,7 +3,7 @@
     "short_name": "vit_project1_app_final",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#181C23",
+    "background_color": "#F6D5CC",
     "theme_color": "#4FC3F7",
     "description": "A new Flutter project.",
     "orientation": "portrait-primary",

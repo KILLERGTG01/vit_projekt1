@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <application
-        android:label="vit_project1_app_final"
+        android:label="UnPhishy"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

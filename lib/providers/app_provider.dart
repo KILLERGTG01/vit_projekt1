@@ -241,6 +241,11 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> submitData(BuildContext context) async {
     if (_inputText.isEmpty && _pickedImage == null) return;
+    
+    _logger.i('🔍 MISINFORMATION CHECK - Initiated by user');
+    _logger.i('   Text content: ${_inputText.isNotEmpty ? '"$_inputText"' : 'None'}');
+    _logger.i('   Image file: ${_pickedImage != null ? _pickedImage!.path : 'None'}');
+    
     _isLoading = true;
     _apiResponse = null;
     _apiError = null;
@@ -248,10 +253,14 @@ class AppProvider extends ChangeNotifier {
     Navigator.pushNamed(context, '/response');
 
     try {
+      _logger.i('📡 Calling API service...');
       final response = await _apiService.sendData(text: _inputText, imageFile: _pickedImage);
+      _logger.i('✅ API response received, parsing JSON...');
       final jsonResponse = jsonDecode(response);
       _apiResponse = MisinformationResponse.fromJson(jsonResponse);
+      _logger.i('🎯 Misinformation analysis completed successfully');
     } catch (e) {
+      _logger.e('❌ Misinformation analysis failed: $e');
       _apiError = e.toString();
     } finally {
       _isLoading = false;
@@ -262,6 +271,10 @@ class AppProvider extends ChangeNotifier {
   Future<void> analyzeThreat(BuildContext context, String content) async {
     if (content.isEmpty) return;
     
+    _logger.i('🛡️ THREAT ANALYSIS - Initiated by user');
+    _logger.i('   Content to analyze: "$content"');
+    _logger.i('   Content length: ${content.length} characters');
+    
     _isThreatAnalysisLoading = true;
     _threatAnalysisResponse = null;
     _threatAnalysisError = null;
@@ -270,10 +283,14 @@ class AppProvider extends ChangeNotifier {
     Navigator.pushNamed(context, '/threat-analysis');
 
     try {
+      _logger.i('📡 Calling threat analysis API service...');
       final response = await _apiService.analyzeThreat(content: content);
+      _logger.i('✅ Threat analysis API response received, parsing JSON...');
       final jsonResponse = jsonDecode(response);
       _threatAnalysisResponse = ThreatAnalysisResponse.fromJson(jsonResponse);
+      _logger.i('🎯 Threat analysis completed successfully');
     } catch (e) {
+      _logger.e('❌ Threat analysis failed: $e');
       _threatAnalysisError = e.toString();
     } finally {
       _isThreatAnalysisLoading = false;
