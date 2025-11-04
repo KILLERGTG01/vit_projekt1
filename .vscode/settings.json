@@ -1,4 +1,5 @@
 {
     "kiroAgent.configureMCP": "Disabled",
-    "cmake.sourceDirectory": "/Users/anurag/development/Flutter_Projects/vit_project1_app_final/linux"
+    "cmake.sourceDirectory": "/Users/anurag/development/Flutter_Projects/vit_project1_app_final/linux",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
