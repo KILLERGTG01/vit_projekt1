@@ -522,8 +522,8 @@ class ThreatAnalysisScreen extends StatelessWidget {
         ),
         Text(
           label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.6),
+          style: const TextStyle(
+            color: Colors.black,
             fontSize: 10,
           ),
         ),

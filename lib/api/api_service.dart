@@ -17,8 +17,8 @@ class ApiService {
   }
 
   void _configureDio() {
-    _dio.options.connectTimeout = const Duration(seconds: 30);
-    _dio.options.receiveTimeout = const Duration(seconds: 30);
+    _dio.options.connectTimeout = const Duration(minutes: 5);
+    _dio.options.receiveTimeout = const Duration(minutes: 5);
     _dio.options.followRedirects = true; // This matches curl --location
     _dio.options.maxRedirects = 5;
     _dio.options.headers = {
@@ -194,11 +194,6 @@ class ApiService {
         ),
       );
       
-      _logger.i('✅ Response received:');
-      _logger.i('   Status: ${response.statusCode}');
-      _logger.i('   Headers: ${response.headers.map}');
-      _logger.i('   Body length: ${response.data.toString().length} chars');
-      
       if (response.statusCode == 200) {
         // Check if response.data is already a Map (parsed JSON) or a String
         if (response.data is Map) {
@@ -241,12 +236,6 @@ class ApiService {
     }
   }
 
-
-
-
-
-
-
   /// Phishing detection method using JSON data
   Future<String> detectPhishing({
     required String content,
@@ -260,12 +249,6 @@ class ApiService {
 
     const phishingUrl = "https://api.abhinavganeshan.in/api/phishing/detect-content";
     
-    _logger.i('🎣 PHISHING DETECTION - Starting');
-    _logger.i('📍 Endpoint: $phishingUrl');
-    _logger.i('📝 Content: "${trimmedContent.substring(0, trimmedContent.length > 100 ? 100 : trimmedContent.length)}${trimmedContent.length > 100 ? '...' : ''}"');
-    _logger.i('🔧 Content Type: ${contentType ?? 'default'}');
-    _logger.i('📧 Sender Info: ${senderInfo != null ? 'provided' : 'none'}');
-
     try {
       // Build the JSON payload based on the conditions
       final Map<String, dynamic> payload = {'content': trimmedContent};
@@ -279,10 +262,7 @@ class ApiService {
       if (senderInfo != null && senderInfo.isNotEmpty) {
         payload['sender_info'] = senderInfo;
       }
-      
-      _logger.i('📡 Sending JSON request to phishing detection API...');
-      _logger.i('   Payload: ${jsonEncode(payload)}');
-      
+
       final response = await _dio.post(
         phishingUrl,
         data: payload,
@@ -345,8 +325,64 @@ class ApiService {
         ),
       );
 
+      _logger.i('✅ Response received:');
+      _logger.i('   Status: ${response.statusCode}');
+      _logger.i('   Body length: ${response.data.toString().length} chars');
+
       if (response.statusCode == 200) {
-        return response.data.toString();
+        final responseData = response.data.toString();
+        _logger.i('   Raw response: ${responseData.substring(0, responseData.length > 200 ? 200 : responseData.length)}...');
+        
+        // Check if response.data is already a Map (parsed JSON) or a String
+        if (response.data is Map) {
+          _logger.i('📄 Response is already parsed as Map');
+          return jsonEncode(response.data); // Convert Map back to JSON string
+        } else {
+          _logger.i('📄 Response is raw string, attempting to parse...');
+          
+          // Try to parse as JSON first
+          try {
+            final jsonData = jsonDecode(responseData);
+            return jsonEncode(jsonData); // Re-encode to ensure proper formatting
+          } catch (jsonError) {
+            _logger.w('⚠️ JSON parsing failed, checking if it\'s malformed JSON...');
+            
+            // Check if it looks like malformed JSON (unquoted keys)
+            if (responseData.trim().startsWith('{') && responseData.trim().endsWith('}')) {
+              _logger.w('⚠️ Detected malformed JSON, attempting to fix...');
+              
+              try {
+                // Try to fix common malformed JSON issues
+                String fixedJson = responseData
+                    .replaceAllMapped(RegExp(r'(\w+):'), (match) => '"${match.group(1)}":')
+                    .replaceAllMapped(RegExp(r':\s*([^",\{\[\]\}]+)(?=[,\}])'), (match) {
+                      final value = match.group(1)?.trim();
+                      if (value != null && !value.startsWith('"') && !value.startsWith('[') && !value.startsWith('{')) {
+                        // Check if it's a number or boolean
+                        if (RegExp(r'^-?\d+\.?\d*$').hasMatch(value) || value == 'true' || value == 'false' || value == 'null') {
+                          return ': $value';
+                        } else {
+                          return ': "$value"';
+                        }
+                      }
+                      return match.group(0) ?? '';
+                    });
+                
+                _logger.i('🔧 Fixed JSON: ${fixedJson.substring(0, fixedJson.length > 200 ? 200 : fixedJson.length)}...');
+                
+                // Try to parse the fixed JSON
+                final parsedJson = jsonDecode(fixedJson);
+                return jsonEncode(parsedJson);
+              } catch (fixError) {
+                _logger.e('❌ Failed to fix malformed JSON: $fixError');
+                throw Exception('Server returned malformed JSON response. This is a server-side issue that needs to be fixed.');
+              }
+            } else {
+              _logger.e('❌ Response is not JSON format');
+              throw Exception('Server returned non-JSON response: ${responseData.substring(0, 100)}...');
+            }
+          }
+        }
       } else {
         throw Exception("Request failed with status: ${response.statusCode}");
       }
