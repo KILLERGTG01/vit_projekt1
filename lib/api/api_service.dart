@@ -247,6 +247,78 @@ class ApiService {
 
 
 
+  /// Phishing detection method using JSON data
+  Future<String> detectPhishing({
+    required String content,
+    String? contentType,
+    Map<String, dynamic>? senderInfo,
+  }) async {
+    final trimmedContent = content.trim();
+    if (trimmedContent.isEmpty) {
+      throw Exception("No valid content to analyze. Content is empty or contains only whitespace.");
+    }
+
+    const phishingUrl = "https://api.abhinavganeshan.in/api/phishing/detect-content";
+    
+    _logger.i('🎣 PHISHING DETECTION - Starting');
+    _logger.i('📍 Endpoint: $phishingUrl');
+    _logger.i('📝 Content: "${trimmedContent.substring(0, trimmedContent.length > 100 ? 100 : trimmedContent.length)}${trimmedContent.length > 100 ? '...' : ''}"');
+    _logger.i('🔧 Content Type: ${contentType ?? 'default'}');
+    _logger.i('📧 Sender Info: ${senderInfo != null ? 'provided' : 'none'}');
+
+    try {
+      // Build the JSON payload based on the conditions
+      final Map<String, dynamic> payload = {'content': trimmedContent};
+      
+      // Add content_type if provided (defaults to 'sms' when specified)
+      if (contentType != null && contentType.trim().isNotEmpty) {
+        payload['content_type'] = contentType.trim();
+      }
+      
+      // Add sender_info if provided (only for email content)
+      if (senderInfo != null && senderInfo.isNotEmpty) {
+        payload['sender_info'] = senderInfo;
+      }
+      
+      _logger.i('📡 Sending JSON request to phishing detection API...');
+      _logger.i('   Payload: ${jsonEncode(payload)}');
+      
+      final response = await _dio.post(
+        phishingUrl,
+        data: payload,
+        options: Options(
+          contentType: 'application/json',
+          headers: {
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      _logger.i('✅ Phishing detection response received:');
+      _logger.i('   Status: ${response.statusCode}');
+      _logger.i('   Body length: ${response.data.toString().length} chars');
+
+      if (response.statusCode == 200) {
+        // Check if response.data is already a Map (parsed JSON) or a String
+        if (response.data is Map) {
+          return jsonEncode(response.data); // Convert Map back to JSON string
+        } else {
+          return response.data.toString();
+        }
+      } else {
+        throw Exception("Phishing detection failed with status: ${response.statusCode}");
+      }
+    } catch (e) {
+      _logger.e('❌ Phishing detection failed: $e');
+      if (e is DioException) {
+        _logger.e('   Type: ${e.type}');
+        _logger.e('   Response: ${e.response?.data}');
+        _logger.e('   Status: ${e.response?.statusCode}');
+      }
+      rethrow;
+    }
+  }
+
   /// Threat analysis method using form-encoded data
   Future<String> analyzeThreat({
     required String content,

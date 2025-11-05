@@ -36,6 +36,32 @@ class _HomeScreenState extends State<HomeScreen> {
     provider.analyzeThreat(context, provider.inputText);
   }
 
+  void _handlePhishingDetection(BuildContext context, AppProvider provider) {
+    if (provider.pickedImage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Phishing detection only works with text. Images cannot be analyzed for phishing.',
+          ),
+          backgroundColor: const Color(0xFFE57373),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      return;
+    }
+
+    // Determine content type and sender info based on shared content
+    String? contentType;
+    Map<String, dynamic>? senderInfo;
+    
+    // For now, we'll use default behavior (no content_type means basic payload)
+    // In the future, you could detect email content and set contentType = 'email'
+    // and provide senderInfo = {'email': 'sender@example.com'}
+    
+    provider.detectPhishing(context, provider.inputText, contentType: contentType, senderInfo: senderInfo);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(
@@ -242,12 +268,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
                               maxLines: 4,
-                              decoration: const InputDecoration(
-                                labelText:
-                                    'Enter text to analyze for misinformation or threats',
+                              decoration: InputDecoration(
+                                labelText: 'Enter text to analyze',
+                                labelStyle: const TextStyle(
+                                  color: Colors.black,
+                                ),
                                 hintText:
                                     'Paste suspicious messages, news, or any text content here...',
-                                contentPadding: EdgeInsets.all(16),
+                                hintStyle: const TextStyle(
+                                  color: Colors.black,
+                                ),
+                                contentPadding: const EdgeInsets.all(16),
                               ),
                             ),
                           ],
@@ -307,25 +338,46 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 24),
                     // Action buttons
-                    Row(
+                    Column(
                       children: [
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: provider.inputText.isNotEmpty
-                                ? () => _handleThreatAnalysis(context, provider)
-                                : null,
-                            icon: const Icon(Icons.security, size: 20),
-                            label: const Text('Check Threats'),
-                            style: FilledButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              textStyle: const TextStyle(
-                                fontWeight: FontWeight.w600,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: provider.inputText.isNotEmpty
+                                    ? () => _handleThreatAnalysis(context, provider)
+                                    : null,
+                                icon: const Icon(Icons.security, size: 20),
+                                label: const Text('Check Threats'),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  textStyle: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: provider.inputText.isNotEmpty
+                                    ? () => _handlePhishingDetection(context, provider)
+                                    : null,
+                                icon: const Icon(Icons.phishing, size: 20),
+                                label: const Text('Check Phishing'),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  textStyle: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
                           child: FilledButton.icon(
                             onPressed:
                                 (provider.inputText.isNotEmpty ||

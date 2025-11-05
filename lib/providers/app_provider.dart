@@ -11,6 +11,7 @@ import 'package:logger/logger.dart';
 import '../api/api_service.dart';
 import '../models/misinformation_response.dart';
 import '../models/threat_analysis_response.dart';
+import '../models/phishing_detection_response.dart';
 
 class AppProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -27,6 +28,11 @@ class AppProvider extends ChangeNotifier {
   bool _isThreatAnalysisLoading = false;
   ThreatAnalysisResponse? _threatAnalysisResponse;
   String? _threatAnalysisError;
+  
+  // Phishing detection properties
+  bool _isPhishingDetectionLoading = false;
+  PhishingDetectionResponse? _phishingDetectionResponse;
+  String? _phishingDetectionError;
   
   // Sharing intent streams
   late StreamSubscription _intentDataStreamSubscription;
@@ -205,6 +211,10 @@ class AppProvider extends ChangeNotifier {
   ThreatAnalysisResponse? get threatAnalysisResponse => _threatAnalysisResponse;
   String? get threatAnalysisError => _threatAnalysisError;
   
+  bool get isPhishingDetectionLoading => _isPhishingDetectionLoading;
+  PhishingDetectionResponse? get phishingDetectionResponse => _phishingDetectionResponse;
+  String? get phishingDetectionError => _phishingDetectionError;
+  
   // Check if content was actually shared from another app
   bool get hasSharedContent => _hasSharedContent;
 
@@ -238,6 +248,8 @@ class AppProvider extends ChangeNotifier {
     _apiError = null;
     _threatAnalysisResponse = null;
     _threatAnalysisError = null;
+    _phishingDetectionResponse = null;
+    _phishingDetectionError = null;
     _hasSharedContent = false; // Reset shared content flag
     
     // Reset sharing intent to clear any cached shared content
@@ -354,6 +366,49 @@ class AppProvider extends ChangeNotifier {
       _threatAnalysisError = e.toString();
     } finally {
       _isThreatAnalysisLoading = false;
+      notifyListeners();
+    } 
+  }
+
+  Future<void> detectPhishing(BuildContext context, String content, {String? contentType, Map<String, dynamic>? senderInfo}) async {
+    // Validate content is not empty or just whitespace
+    final trimmedContent = content.trim();
+    if (trimmedContent.isEmpty) {
+      _logger.w('⚠️ No valid content to analyze - content is empty or whitespace only');
+      return;
+    }
+    
+    _logger.i('🎣 PHISHING DETECTION - Initiated by user');
+    _logger.i('   Content to analyze: "$trimmedContent"');
+    _logger.i('   Content length: ${trimmedContent.length} characters');
+    _logger.i('   Content type: ${contentType ?? 'default'}');
+    _logger.i('   Sender info: ${senderInfo != null ? 'provided' : 'none'}');
+    
+    _isPhishingDetectionLoading = true;
+    _phishingDetectionResponse = null;
+    _phishingDetectionError = null;
+    notifyListeners();
+    
+    if (context.mounted) {
+      Navigator.pushNamed(context, '/phishing-detection');
+    }
+
+    try {
+      _logger.i('📡 Calling phishing detection API service...');
+      final response = await _apiService.detectPhishing(
+        content: trimmedContent,
+        contentType: contentType,
+        senderInfo: senderInfo,
+      );
+      _logger.i('✅ Phishing detection API response received, parsing JSON...');
+      final jsonResponse = jsonDecode(response);
+      _phishingDetectionResponse = PhishingDetectionResponse.fromJson(jsonResponse);
+      _logger.i('🎯 Phishing detection completed successfully');
+    } catch (e) {
+      _logger.e('❌ Phishing detection failed: $e');
+      _phishingDetectionError = e.toString();
+    } finally {
+      _isPhishingDetectionLoading = false;
       notifyListeners();
     } 
   }

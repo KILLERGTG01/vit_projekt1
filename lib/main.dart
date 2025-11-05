@@ -4,6 +4,7 @@ import 'providers/app_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/response_screen.dart';
 import 'screens/threat_analysis_screen.dart';
+import 'screens/phishing_detection_screen.dart';
 
 void main() {
   runApp(
@@ -145,6 +146,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const HomeScreen(),
         '/response': (context) => const ResponseScreen(),
         '/threat-analysis': (context) => const ThreatAnalysisScreen(),
+        '/phishing-detection': (context) => const PhishingDetectionScreen(),
       },
     );
   }
